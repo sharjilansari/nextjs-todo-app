@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getTodoById, updateTodo } from "@/lib/actions"
 import { formatDate } from "@/lib/utils"
 import { Save } from "lucide-react"
+import { RichTextEditor } from "./rich-text-editor"
 
 interface TodoDetailProps {
   selectedTodoId: string
@@ -123,7 +123,13 @@ export default function TodoDetail({ selectedTodoId }: TodoDetailProps) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Description</label>
-              <Textarea name="description" value={editedTodo.description} onChange={handleInputChange} rows={5} />
+              <RichTextEditor
+                value={editedTodo.description}
+                onChange={(value) => {
+                  setEditedTodo((prev) => ({ ...prev, description: value }))
+                  setHasChanges(true)
+                }}
+              />
             </div>
             <div className="text-sm text-muted-foreground">Created: {formatDate(todo.createdAt)}</div>
           </div>

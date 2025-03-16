@@ -6,14 +6,27 @@ import { revalidatePath } from "next/cache"
 
 const ITEMS_PER_PAGE = 5
 
-export async function getTodos(page = 1) {
+export async function getTodos(page = 1, search = "") {
   const { db } = await connectToDatabase()
 
   const skip = (page - 1) * ITEMS_PER_PAGE
 
-  const todos = await db.collection("todos").find({}).sort({ createdAt: -1 }).skip(skip).limit(ITEMS_PER_PAGE).toArray()
+  // Create a query object that includes search if provided
+  const query = search
+    ? {
+        $or: [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }],
+      }
+    : {}
 
-  const totalCount = await db.collection("todos").countDocuments({})
+  const todos = await db
+    .collection("todos")
+    .find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(ITEMS_PER_PAGE)
+    .toArray()
+
+  const totalCount = await db.collection("todos").countDocuments(query)
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
   return {
@@ -83,6 +96,20 @@ export async function updateTodo(id: string, todoData: { title: string; descript
   } catch (error) {
     console.error("Error updating todo:", error)
     throw new Error("Failed to update todo")
+  }
+}
+
+export async function deleteTodo(id: string) {
+  try {
+    const { db } = await connectToDatabase()
+
+    await db.collection("todos").deleteOne({ _id: new ObjectId(id) })
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting todo:", error)
+    throw new Error("Failed to delete todo")
   }
 }
 
